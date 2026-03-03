@@ -1,0 +1,7 @@
+script.py
+telecom_churn_model.pkl
+venv/
+__pycache__/
+*.pkl
+*.csv
+.env
