@@ -7,7 +7,7 @@ model = joblib.load("lightgbm_orders_v1.pkl")
 def make_pred(request):
 
     try:        
-        input_features = build_features(
+        input_features, chardata = build_features(
             request.restaurant_id, 
             request.target_date,
             request.promo_flag
@@ -23,7 +23,8 @@ def make_pred(request):
         return {
             "restaurant_id": request.restaurant_id,
             "target_date": request.target_date,
-            "predicted_orders": prediction[0] 
+            "predicted_orders": prediction[0],
+            "chartdata": chardata 
         }
         
     except ValueError as e:
