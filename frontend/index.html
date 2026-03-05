@@ -3,213 +3,21 @@
     <head>
         <title>Forecast Engine API</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <style>
-            body { 
-                font-family: sans-serif; 
-                padding: 50px; 
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-            .status { color: #008000; font-weight: bold; }
-            h1 { font-size: 3em; text-align: center;}
-            .form-container {
-                background: #f5f5f5;
-                padding: 20px;
-                border-radius: 8px;
-                margin: 30px 0;
-                text-align: center;
-            }
-            input, select { 
-                width: 250px; 
-                padding: 10px; 
-                margin: 10px 5px;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-            }
-            button { 
-                padding: 12px 30px; 
-                margin: 10px 5px;
-                border-radius: 5px; 
-                border: 1px solid #9c9a9a;
-                background: #007bff;
-                color: white;
-                cursor: pointer;
-                font-size: 14px;
-            }
-            button:hover {
-                background: #0056b3;
-            }
-            .results {
-                margin-top: 40px;
-            }
-            .chart-container {
-                position: relative;
-                height: 400px;
-                margin: 20px 0;
-                background: white;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            .prediction-result {
-                background: #e8f5e9;
-                padding: 20px;
-                border-radius: 8px;
-                margin: 20px 0;
-                text-align: center;
-                border-left: 4px solid #4caf50;
-            }
-            .error {
-                background: #ffebee;
-                padding: 20px;
-                border-radius: 8px;
-                color: #c62828;
-                border-left: 4px solid #f44336;
-                margin: 20px 0;
-            }
-        </style>
+        <link rel="stylesheet" href="/static/styles.css">
     </head>
     <body>
         <h1>Forecast Engine API</h1>
         <p style="text-align: center;">Status: <span class="status">Live</span></p>
+        <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
         
         <div class="form-container">
             <h2>Order Forecasting</h2>
-            <div>
-                <input type="number" id="restaurantId" placeholder="Restaurant ID" min="1">
-                <input type="date" id="targetDate" placeholder="Target Date">
-                <select id="promoFlag">
-                    <option value="0">No Promo</option>
-                    <option value="1">With Promo</option>
-                </select>
-            </div>
+            <textarea id="query" placeholder="Enter query: mention Restaurant id, Target date, Promo_flag for forecasting (e.g., 123 2023-10-01 1)" style="width: 60%; height: 100px; resize: vertical;"></textarea>
+            <br>
             <button onclick="sendPrediction()">Get Forecast</button>
         </div>
 
         <div class="results" id="results"></div>
     </body>
-    <script>
-        let chartInstance = null;
-
-        function sendPrediction() {
-            const restaurantId = parseInt(document.getElementById('restaurantId').value);
-            const targetDate = document.getElementById('targetDate').value;
-            const promoFlag = parseInt(document.getElementById('promoFlag').value);
-            const resultsDiv = document.getElementById('results');
-
-            if (!restaurantId || !targetDate) {
-                resultsDiv.innerHTML = '<div class="error">Please fill in all required fields</div>';
-                return;
-            }
-
-            resultsDiv.innerHTML = '<p>Loading...</p>';
-
-            fetch('/predict', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    restaurant_id: restaurantId,
-                    target_date: targetDate,
-                    promo_flag: promoFlag
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    resultsDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${data.error}</div>`;
-                } else {
-                    displayResults(data);
-                }
-            })
-            .catch(error => {
-                resultsDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${error.message}</div>`;
-                console.error('Error:', error);
-            });
-        }
-
-        function displayResults(data) {
-            const resultsDiv = document.getElementById('results');
-            const prediction = Math.round(data.predicted_orders);
-            
-            let resultsHTML = `
-                <div class="prediction-result">
-                    <h3>Prediction Results</h3>
-                    <p><strong>Restaurant ID:</strong> ${data.restaurant_id}</p>
-                    <p><strong>Target Date:</strong> ${data.target_date}</p>
-                    <p style="font-size: 24px; color: #2e7d32;"><strong>Predicted Orders: ${prediction}</strong></p>
-                </div>
-            `;
-
-            if (data.chartdata && Object.keys(data.chartdata).length > 0) {
-                resultsHTML += '<div class="chart-container"><canvas id="orderChart"></canvas></div>';
-            }
-
-            resultsDiv.innerHTML = resultsHTML;
-
-            // Display chart if data exists
-            if (data.chartdata && Object.keys(data.chartdata).length > 0) {
-                setTimeout(() => {
-                    displayChart(data.chartdata);
-                }, 100);
-            }
-        }
-
-        function displayChart(chartdata) {
-            const ctx = document.getElementById('orderChart');
-            if (!ctx) return;
-
-            const dates = Object.keys(chartdata).sort();
-            const orders = dates.map(date => chartdata[date]);
-
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Historical Orders',
-                        data: orders,
-                        borderColor: '#2196F3',
-                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#2196F3',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Order History',
-                            font: { size: 16 }
-                        },
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: { display: true, text: 'Orders' }
-                        },
-                        x: {
-                            title: { display: true, text: 'Date' },
-                            ticks: {
-                                maxTicksLimit: 10
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    </script>
+    <script src="/static/script.js"></script>
 </html>

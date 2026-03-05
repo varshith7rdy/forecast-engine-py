@@ -6,11 +6,13 @@ model = joblib.load("lightgbm_orders_v1.pkl")
 
 def make_pred(request):
 
+    print(type(request), request)
+
     try:        
         input_features, chardata = build_features(
-            request.restaurant_id, 
-            request.target_date,
-            request.promo_flag
+            request["restaurant_id"], 
+            request["target_date"],
+            request["promo_flag"]
         )
 
         if hasattr(model, 'booster_'):
@@ -21,8 +23,8 @@ def make_pred(request):
         print("Prediction complete")
         
         return {
-            "restaurant_id": request.restaurant_id,
-            "target_date": request.target_date,
+            "restaurant_id": request["restaurant_id"],
+            "target_date": request["target_date"],
             "predicted_orders": prediction[0],
             "chartdata": chardata 
         }
