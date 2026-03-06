@@ -1,12 +1,14 @@
 from features import build_features
 from pydantic import BaseModel
+import math
 import joblib
+from logger import log_predictions
 
 model = joblib.load("lightgbm_orders_v1.pkl")
 
 def make_pred(request):
 
-    print(type(request), request)
+    print("Request:", request)
 
     try:        
         input_features, chardata = build_features(
@@ -21,13 +23,18 @@ def make_pred(request):
             prediction = model.predict(input_features)
 
         print("Prediction complete")
-        
-        return {
+
+        data = {
             "restaurant_id": request["restaurant_id"],
             "target_date": request["target_date"],
-            "predicted_orders": prediction[0],
-            "chartdata": chardata 
+            "predicted_orders": math.ceil(prediction[0]),
         }
+
+        log_predictions(data)
+
+        data['chartdata'] = chardata
+ 
+        return data
         
     except ValueError as e:
         return {"error": str(e), "status": 400}

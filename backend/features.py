@@ -29,6 +29,7 @@ def build_features(restaurant_id:int, target_date:str, promo_flag=0):
         val = dt['orders'][i]
         d1[key] = int(val)
 
+
     rolling_7 = hist['orders'].iloc[-7:].mean()
     rolling_30 = hist['orders'].iloc[-30:].mean()
 

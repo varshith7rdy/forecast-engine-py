@@ -49,4 +49,3 @@ def get_historical_data(query):
     except Exception as e:
         print(f"Database error: {e}")
         return {"error": str(e), "chartdata": {}}
-
